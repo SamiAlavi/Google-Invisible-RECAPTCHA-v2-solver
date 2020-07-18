@@ -2,27 +2,20 @@
 
 from time import sleep     # Used for to give time for a page to load from selenium import webdriver
 from requests import get
+from pandas_ods_reader import read_ods
 from prox import get_proxies, proxy_driver
 from audiorecog import recog
 
-def getspinnertext(driver):    
-    url = 'https://smodin.me/it/riorganizza-automaticamente-il-testo-in-italiano-gratuitamente'
-    url = 'https://smodin.me/free-english-rewriter-and-spinner'
-    driver.get(url)
+def writeConvFile(text):
+    with open('convtext.txt','a') as f:
+        f.write(text)
 
-    flag1 = True
-    flag2 = True
-    textsample=['a','b','c']
+def writeProgress(count):    
+    with open('start.txt','w') as f:
+        f.write(count)
 
-    text = driver.find_element_by_css_selector('textarea.jss167')
-    text.send_keys(textsample[0])
-
-    go = driver.find_element_by_css_selector('button.MuiButton-containedPrimary')
-    driver.execute_script("window.scrollTo(0, 100)")
-    sleep(2)
-    go.click()
-    
-    sleep(1)
+def captchasolver(driver):
+    flag1 = True    
     iframe = driver.find_element_by_xpath("//iframe[@title='recaptcha challenge']") # captcha frame
     driver.switch_to.frame(iframe)
   
@@ -43,23 +36,41 @@ def getspinnertext(driver):
         btnverify.click()
         try:
             error = driver.find_element_by_css_selector('div.rc-audiochallenge-error-message')
+            if error.text.startswith('Multiple'):
+                continue
+            else:
+                flag1 = False
         except:
-            break
-        if error.text.startswith('Multiple'):
             continue
-        else:
-            flag1 = False
-    print('Passed')
-    driver.switch_to.default_content()
+        driver.switch_to.default_content()
+    return True
 
-    inn = input('Enter y to continue:' ).lower()
-    if inn=='y':
-        for i in range(1,50):
+def getspinnertext(driver,start,texts):    
+    url = 'https://smodin.me/it/riorganizza-automaticamente-il-testo-in-italiano-gratuitamente'
+    #url = 'https://smodin.me/free-english-rewriter-and-spinner'
+    driver.get(url)
+
+    text = driver.find_element_by_css_selector('textarea.jss167')
+    go = driver.find_element_by_css_selector('button.MuiButton-containedPrimary')
+    convtext = driver.find_element_by_css_selector('div.jss168')
+    driver.execute_script("window.scrollTo(0, 100)")
+
+    for i in range(start,len(texts)):    
+        text.send_keys(texts[i][0]) # input text
+        sleep(2)
+        go.click()    # click on REWRITE
+        sleep(1)
+
+        if captchasolver(driver):
+            writeConvFile(f'{i}) {convtext.text}')
+            writeProgress(str(i))
             text.clear()
-            text.send_keys(textsample[i%3])
-            print(i)
+    
 
-
+texts = read_ods('./60 text portions.ods', 1, headers=False).dropna().values
+with open('start.txt','r') as f:
+    start = int(f.read())
+    
 ALL_PROXIES = get_proxies()
 driver = proxy_driver(ALL_PROXIES)
-getspinnertext(driver)
+getspinnertext(driver,start,texts)

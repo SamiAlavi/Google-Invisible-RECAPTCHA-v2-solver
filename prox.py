@@ -51,6 +51,7 @@ def proxy_driver(PROXIES):
     print(f'Current UserAgent\n{userAgent}')
     
     options.add_argument("--start-maximized")
+    options.add_argument("user-agent={userAgent}")
     options.add_argument("ignore-certificate-errors")
     options.add_extension('mpbjkejclgfgadiemmefgebjfooflfhl.crx')    
     driver = webdriver.Chrome('chromedriver.exe',options=options)
