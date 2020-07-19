@@ -55,14 +55,16 @@ def getspinnertext(driver,start,texts):
     convtext = driver.find_element_by_css_selector('div.jss168')
     driver.execute_script("window.scrollTo(0, 100)")
 
-    for i in range(start,len(texts)):    
-        text.send_keys(texts[i][0]) # input text
+    for i in range(start,len(texts)):
+        temp =  texts[i][0]
+        text.send_keys(temp)
+        
         sleep(2)
         go.click()    # click on REWRITE
         sleep(1)
 
         if captchasolver(driver):
-            writeConvFile(f'{i}) {convtext.text}')
+            writeConvFile(f'{i}) {convtext.text}\n')
             writeProgress(str(i))
             text.clear()
     

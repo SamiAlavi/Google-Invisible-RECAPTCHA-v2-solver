@@ -51,8 +51,11 @@ def proxy_driver(PROXIES):
     print(f'Current UserAgent\n{userAgent}')
     
     options.add_argument("--start-maximized")
+    options.add_argument("--proxy-server=%s" % pxy)
     options.add_argument("user-agent={userAgent}")
     options.add_argument("ignore-certificate-errors")
+    options.add_argument("--disable-bundled-ppapi-flash")   # Disable internal Flash player
+    options.add_argument("--disable-plugins-discovery")     # Disable external Flash player (by not allowing it to load)
     options.add_extension('mpbjkejclgfgadiemmefgebjfooflfhl.crx')    
     driver = webdriver.Chrome('chromedriver.exe',options=options)
     return driver
