@@ -1,14 +1,13 @@
 from selenium.webdriver.common.proxy import Proxy, ProxyType
-from fake_useragent import UserAgent
 from selenium import webdriver
 
 def get_proxies():
-    print('----GETTING PROXIES----')
     options = webdriver.ChromeOptions()
     options.add_argument("log-level=3")
     options.add_argument("--headless")
     driver = webdriver.Chrome('chromedriver.exe',options=options)
     driver.get("https://free-proxy-list.net/")
+    print('----GETTING PROXIES----')
 
     PROXIES = []
     proxies = driver.find_elements_by_css_selector("tr[role='row']")
@@ -26,7 +25,7 @@ def get_proxies():
         
     return PROXIES
 
-def proxy_driver(PROXIES):
+def proxy_driver(PROXIES,ua):
     print('\n----CONNECTING TO PROXY----')
     options = webdriver.ChromeOptions()
     prox = Proxy()
@@ -35,7 +34,8 @@ def proxy_driver(PROXIES):
         print("--- Proxies used up (%s)" % len(PROXIES))
         PROXIES = get_proxies()
         
-    pxy = PROXIES[-1]
+    pxy = PROXIES.pop()
+    #pxy = '80.25.87.49:32850'
     print(f'Current Proxy ({pxy})')
 
     prox.proxy_type = ProxyType.MANUAL
@@ -45,17 +45,17 @@ def proxy_driver(PROXIES):
     prox.ssl_proxy = pxy
     options.Proxy = prox
     
-    print('\n----GETTING USER AGENTS----')
-    ua = UserAgent()
+    print('\n----CHANGING USER AGENT----')
     userAgent = ua.random
     print(f'Current UserAgent\n{userAgent}')
-    
+
     options.add_argument("--start-maximized")
     options.add_argument("--proxy-server=%s" % pxy)
     options.add_argument("user-agent={userAgent}")
+    
     options.add_argument("ignore-certificate-errors")
     options.add_argument("--disable-bundled-ppapi-flash")   # Disable internal Flash player
     options.add_argument("--disable-plugins-discovery")     # Disable external Flash player (by not allowing it to load)
     options.add_extension('mpbjkejclgfgadiemmefgebjfooflfhl.crx')    
     driver = webdriver.Chrome('chromedriver.exe',options=options)
-    return driver
+    return driver, PROXIES

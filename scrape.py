@@ -5,6 +5,7 @@ from requests import get
 from pandas_ods_reader import read_ods
 from prox import get_proxies, proxy_driver
 from audiorecog import recog
+from fake_useragent import UserAgent
 
 def writeConvFile(text):
     with open('convtext.txt','a') as f:
@@ -15,11 +16,11 @@ def writeProgress(count):
         f.write(count)
 
 def captchasolver(driver):
-    flag1 = True    
+    flag1 = True
     iframe = driver.find_element_by_xpath("//iframe[@title='recaptcha challenge']") # captcha frame
     driver.switch_to.frame(iframe)
   
-    sleep(1)
+    sleep(5)
     btnsolve = driver.find_element_by_id('solver-button')
     btnverify = driver.find_element_by_id('recaptcha-verify-button')
     while flag1:
@@ -49,30 +50,58 @@ def getspinnertext(driver,start,texts):
     url = 'https://smodin.me/it/riorganizza-automaticamente-il-testo-in-italiano-gratuitamente'
     #url = 'https://smodin.me/free-english-rewriter-and-spinner'
     driver.get(url)
-
-    text = driver.find_element_by_css_selector('textarea.jss167')
-    go = driver.find_element_by_css_selector('button.MuiButton-containedPrimary')
-    convtext = driver.find_element_by_css_selector('div.jss168')
-    driver.execute_script("window.scrollTo(0, 100)")
+    flag3 = True
+    
+    count = 0
+    while flag3:
+        try:
+            text = driver.find_element_by_css_selector('textarea.jss167')
+            go = driver.find_element_by_css_selector('button.MuiButton-containedPrimary')
+            convtext = driver.find_element_by_css_selector('div.jss168')
+            driver.execute_script("window.scrollTo(0, 100)")
+            flag3 = False
+        except:
+            driver.refresh()
+            count+=1
+            print('Refreshing')
+            if count>5:
+                driver.close()
+                run()
 
     for i in range(start,len(texts)):
+        flag2 = True
         temp =  texts[i][0]
         text.send_keys(temp)
         
         sleep(2)
-        go.click()    # click on REWRITE
-        sleep(1)
+        count = 0
+        while flag2:
+            try:
+                go.click()    # click on REWRITE
+                sleep(1)
 
-        if captchasolver(driver):
-            writeConvFile(f'{i}) {convtext.text}\n')
-            writeProgress(str(i))
-            text.clear()
+                if captchasolver(driver):
+                    flag2 = False
+                    writeConvFile(f'{i}) {convtext.text}\n')
+                    writeProgress(str(i))
+                    text.clear()
+            except:
+                print('Captcha frame not found')
+                count+=1
+                if count>5:
+                    driver.close()
+                    run()
     
 
+def run():
+    global PROXIES,texts
+    driver, PROXIES = proxy_driver(PROXIES, ua)
+    with open('start.txt','r') as f:
+        start = int(f.read())
+    getspinnertext(driver,start,texts)
+    
+#read file
 texts = read_ods('./60 text portions.ods', 1, headers=False).dropna().values
-with open('start.txt','r') as f:
-    start = int(f.read())
-    
-ALL_PROXIES = get_proxies()
-driver = proxy_driver(ALL_PROXIES)
-getspinnertext(driver,start,texts)
+ua = UserAgent()    
+PROXIES = get_proxies()
+run()
